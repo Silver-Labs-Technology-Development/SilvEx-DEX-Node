@@ -1,83 +1,66 @@
 # SilvEx DEX Node
 
-Indexing, routing, and quote services for SilvEx DEX.
-
-**Status: planned — scaffold only.** No chain indexer, route engine, quote API,
-or cache exists in this repository yet. This is a read-only service: it never
-holds keys, signs transactions, or settles trades.
+> **Status: Planned — repository and scope only.**
+> No indexer, router, quote service, database, or deployable node exists here.
 
 ## Purpose
 
-Give the SilvEx DEX frontend a fast, consistent view of on-chain liquidity and
-a route for a requested trade. The node indexes BTCS L2 market events, builds
-a routing graph, and returns quotes with an explicit block reference and
-expiry.
+SilvEx DEX Node is the infrastructure boundary for DEX-specific indexing,
+routing, pool data, and quote services. It exists only to support a DEX
+architecture that has been selected and reviewed; it is not a generic indexer
+and it is not the SilvEx DEX user application.
 
-## Scope
+## Proposed scope
 
-Planned work, in dependency order:
+- Index pool creation, liquidity, swaps, and relevant contract events.
+- Maintain canonical pool state with explicit reorganization handling.
+- Serve bounded pool, route, and quote APIs.
+- Validate and cache RPC reads with stale-data and failure semantics.
+- Expose health, readiness, lag, and last-processed-block information.
+- Support restart and replay from a defined checkpoint.
 
-1. **Market indexer** — follow BTCS L2 blocks, decode pool and order events,
-   and maintain reserves, liquidity, and market metadata.
-2. **Reorg handling** — track canonical block hashes, reverse orphaned events,
-   and expose the indexed tip with every response.
-3. **Routing engine** — build a token graph and search for candidate routes by
-   output, fees, and hop count.
-4. **Quote service** — return amount in, expected out, minimum out, price
-   impact, route, block reference, and expiry.
-5. **API** — read-only endpoints for tokens, markets, routes, quotes, and
-   health, with pagination and rate limits.
-6. **Operations** — backfill, reindex, cache warming, metrics, and a documented
-   recovery procedure.
+## Explicitly out of scope until justified
 
-## Out of scope
-
-- Custody, signing, transaction submission, or settlement.
-- Centralized order books and matching (that is `SilvEx-CEX`).
-- The swap interface (that is `SilvEx-DEX`).
-- Consensus changes or a replacement BTCS L2 node.
-- Presenting a quote as a guaranteed execution price.
-
-## Planned components
-
-| Component | Responsibility | Depends on |
-| --- | --- | --- |
-| `ingest/` | Block, log, and market event ingestion | BTCS L2 RPC |
-| `store/` | Canonical market and liquidity state | Database |
-| `router/` | Graph construction and route search | `store/` |
-| `quotes/` | Quote calculation and expiry | `router/` |
-| `api/` | Read-only HTTP endpoints | `quotes/`, `store/` |
-| `ops/` | Backfill, metrics, and health | All |
-
-The directory names are proposed. They are not created yet.
+- Building services before the DEX design selects a chain and protocol.
+- Custody, signing, or submission of user transactions.
+- Promising executable quotes when pool data is stale or unavailable.
+- Replacing the BTCS L2 execution client or BTCS Core RPC.
+- A separate chain indexer that duplicates Silver Scan without a documented
+  boundary.
 
 ## Integration points
 
-- [SilvEx-DEX](https://github.com/Silver-Labs-Technology-Development/SilvEx-DEX)
-  — consumes quotes and market data.
-- [btcs-l2](https://github.com/Silver-Labs-Technology-Development/btcs-l2)
-  — EVM blocks, receipts, logs, and settlement state.
-- [Silver-Scan](https://github.com/Silver-Labs-Technology-Development/Silver-Scan)
-  — optional transaction and contract references for users.
-- [SilverForge-Studio](https://github.com/Silver-Labs-Technology-Development/SilverForge-Studio)
-  — token metadata for listed assets.
-- [silver-labs-platform](https://github.com/Silver-Labs-Technology-Development/silver-labs-platform)
-  — shared schema and client conventions.
+- **SilvEx DEX** — the only consumer whose design justifies these services.
+- **BTCS Core / BTCS L2 RPC** — canonical chain reads.
+- **Silver Scan** — shared indexing boundaries where responsibilities overlap.
+- **silver-labs-platform** — schemas and client contracts.
+- **SilverPay** — wallet-side display only; no node-held keys.
 
-## Local development
+## Decisions required before implementation
 
-There is no runnable code yet. The intended loop is a disposable BTCS L2 node
-with seeded test markets, indexed into a local database, plus a local quote
-request against a known fixture. Development defaults bind to loopback.
+1. The DEX chain and contract design this node must serve.
+2. Indexed entities, retention, pagination, and API compatibility.
+3. Reorganization depth, rollback behavior, and stale-data policy.
+4. Quote semantics, price impact, and failure modes.
+5. Deployment, monitoring, and restart/replay requirements.
 
-## Safety and release status
+## First milestone
 
-This is a development scaffold with no implementation or audit. Quote services
-are latency-sensitive and easy to misread; every response must carry its block
-reference and expiry. Never commit RPC credentials, wallet data, `.env` files,
-or production database dumps.
+A design note that maps each required service to a DEX capability, followed by a
+local indexer and quote API tested against deterministic fixtures and a
+reorganization scenario. No production endpoint.
 
-See [`SECURITY.md`](SECURITY.md).
+## Repository facts
+
+- Local workspace path: `~/Silver-Labs/SilvEx-DEX-Node`
+- Default branch: `main`
+- Implementation: none
+- Tests run: none (no code)
+- License: no license selected; no reuse rights are granted
+- Visibility: public planning repository
+
+This repository is labeled planned so that its existence is not mistaken for a
+running service.
 
 ## Repository layout
 
@@ -91,14 +74,18 @@ See [`SECURITY.md`](SECURITY.md).
     └── ARCHITECTURE.md
 ```
 
+## Architecture note
+
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) records a candidate component
+breakdown and threat model. It is subordinate to the scope and decisions above
+and does not authorize implementation.
+
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for the reporting policy and security
+boundaries. No implementation, test suite, or independent audit exists yet.
+
 ## License
 
 No open-source license is granted. See [`LICENSE`](LICENSE). The repository is
 public for review and development, not for reuse or redistribution.
-
-## Related repositories
-
-- [SilvEx DEX](https://github.com/Silver-Labs-Technology-Development/SilvEx-DEX)
-- [SilvEx CEX](https://github.com/Silver-Labs-Technology-Development/SilvEx-CEX)
-- [BTCS L2](https://github.com/Silver-Labs-Technology-Development/btcs-l2)
-- [Silver Labs workspace](https://github.com/orgs/Silver-Labs-Technology-Development/repositories)
